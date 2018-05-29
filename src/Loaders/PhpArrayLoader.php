@@ -24,6 +24,7 @@ use Certificationy\Question;
  * [
  *   [
  *     'question' => 'What is the best PHP framework?',
+ *     'versions' => ['php' => '7.0'],
  *     'answers' => [
  *        [
  *          'value' => 'Laravel',
@@ -40,6 +41,8 @@ use Certificationy\Question;
  */
 class PhpArrayLoader implements LoaderInterface
 {
+    use VersionParserAware;
+
     /**
      * @var Questions
      */
@@ -58,7 +61,7 @@ class PhpArrayLoader implements LoaderInterface
     /**
      * @inheritdoc
      */
-    public function load(int $nbQuestions, array $categories = []) : Questions
+    public function load(int $nbQuestions, array $categories = [], array $versions = null) : Questions
     {
         $questionsData = $this->questionsData;
 
@@ -67,6 +70,14 @@ class PhpArrayLoader implements LoaderInterface
                 return in_array($questionData['category'], $categories);
             });
         }
+
+        $questionsData = array_filter($questionsData, function ($item) use ($versions) {
+            if (is_array($versions) && isset($item['versions']) && !$this->versionApplies($item['versions'], $versions)) {
+                return false;
+            }
+
+            return true;
+        });
 
         $dataMax = count($questionsData);
         $nbQuestions = min($nbQuestions, $dataMax);
@@ -89,14 +100,15 @@ class PhpArrayLoader implements LoaderInterface
      */
     public function all() : Questions
     {
+        $questions = [];
+
         if (null === $this->questions) {
-            $questions = [];
             foreach ($this->questionsData as $questionData) {
                 $questions[] = $this->createFromEntry($questionData);
             }
         }
 
-        return $questions;
+        return new Questions($questions);
     }
 
     /**

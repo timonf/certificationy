@@ -12,12 +12,16 @@
 
 namespace Tests\Certificationy\Loaders;
 
+use Certificationy\Interfaces\LoaderInterface;
 use Certificationy\Loaders\YamlLoader;
 use Certificationy\Set;
 
 class YamlLoaderTest extends \PHPUnit\Framework\TestCase
 {
+    /** @var string */
     private $configFile;
+
+    /** @var LoaderInterface */
     private $yamlLoader;
 
     public function setUp()
@@ -50,6 +54,15 @@ class YamlLoaderTest extends \PHPUnit\Framework\TestCase
     {
         $this->assertTrue(is_array($this->yamlLoader->categories()));
         $this->assertCount(2, $this->yamlLoader->categories());
+    }
+
+    public function testVersions()
+    {
+        $version1OnlyQuestions = $this->yamlLoader->load(5, ['A'], ['lib/a' => '1.2', 'php' => '^5.3|~7.0']);
+        $version2OnlyQuestions = $this->yamlLoader->load(5, ['A'], ['lib/a' => '2.0', 'php' => '^5.3|~7.0']);
+
+        $this->assertCount(2, $version1OnlyQuestions);
+        $this->assertCount(3, $version2OnlyQuestions);
     }
 
     /**

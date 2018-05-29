@@ -22,6 +22,8 @@ use Symfony\Component\Yaml\Yaml;
 
 class YamlLoader implements LoaderInterface
 {
+    use VersionParserAware;
+
     /**
      * @var Questions
      */
@@ -40,9 +42,9 @@ class YamlLoader implements LoaderInterface
     /**
      * @inheritdoc
      */
-    public function load(int $nbQuestions, array $categories) : Questions
+    public function load(int $nbQuestions, array $categories, array $versions = null) : Questions
     {
-        $data = $this->prepareFromYaml($categories, $this->paths);
+        $data = $this->prepareFromYaml($categories, $versions);
         $dataMax = count($data);
         $nbQuestions = min($nbQuestions, $dataMax);
 
@@ -91,7 +93,7 @@ class YamlLoader implements LoaderInterface
     public function categories() : array
     {
         $categories = [];
-        $files = $this->prepareFromYaml([], $this->paths);
+        $files = $this->prepareFromYaml([]);
 
         foreach ($files as $file) {
             $categories[] = $file['category'];
@@ -104,10 +106,11 @@ class YamlLoader implements LoaderInterface
      * Prepares data from Yaml files and returns an array of questions
      *
      * @param array $categories : List of categories which should be included, empty array = all
+     * @param array $versions : List of configured versions, null when versions should be ignored
      *
      * @return array
      */
-    protected function prepareFromYaml(array $categories = []) : array
+    protected function prepareFromYaml(array $categories = [], array $versions = null) : array
     {
         $data = array();
 
@@ -121,6 +124,14 @@ class YamlLoader implements LoaderInterface
                 if (count($categories) > 0 && !in_array($category, $categories)) {
                     continue;
                 }
+
+                $fileData['questions'] = array_filter($fileData['questions'], function ($item) use ($versions) {
+                    if (is_array($versions) && isset($item['versions']) && !$this->versionApplies($item['versions'], $versions)) {
+                        return false;
+                    }
+
+                    return true;
+                });
 
                 array_walk($fileData['questions'], function (&$item) use ($category) {
                     $item['category'] = $category;

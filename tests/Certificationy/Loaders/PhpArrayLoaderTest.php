@@ -12,12 +12,16 @@
 
 namespace Tests\Certificationy\Loaders;
 
+use Certificationy\Interfaces\LoaderInterface;
 use Certificationy\Loaders\PhpArrayLoader;
 use Certificationy\Set;
 
 class PhpArrayLoaderTest extends \PHPUnit\Framework\TestCase
 {
+    /** @var string */
     private $configFile;
+
+    /** @var LoaderInterface */
     private $arrayLoader;
 
     public function setUp()
@@ -48,6 +52,15 @@ class PhpArrayLoaderTest extends \PHPUnit\Framework\TestCase
     {
         $this->assertTrue(is_array($this->arrayLoader->categories()));
         $this->assertCount(2, $this->arrayLoader->categories());
+    }
+
+    public function testVersions()
+    {
+        $version1OnlyQuestions = $this->arrayLoader->load(5, ['A'], ['lib/a' => '1.2', 'php' => '^5.6']);
+        $version2OnlyQuestions = $this->arrayLoader->load(5, ['A'], ['lib/a' => '2.0', 'php' => '^5.6']);
+
+        $this->assertCount(2, $version1OnlyQuestions);
+        $this->assertCount(3, $version2OnlyQuestions);
     }
 
     public function testCategoriesAreFiltered()
